@@ -1,6 +1,7 @@
 # timeit::timeit
 
-Inspired by `timeit` from Python, this class provides a simple way to time small bits of C/C++ code.
+Inspired by [timeit](https://docs.python.org/3.0/library/timeit.html) module from Python,
+this class provides a simple way to time small bits of C/C++ code.
  
 Example:
 
