@@ -28,7 +28,7 @@ namespace timeit {
         template<typename F, typename... Args>
         static TimeT duration(F &&func, Args &&... args) {
             auto start = ClockT::now();
-            std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
+            std::forward<F>(func)(std::forward<Args>(args)...);
             return std::chrono::duration_cast<TimeT>(ClockT::now() - start);
         }
     };
@@ -52,10 +52,8 @@ namespace timeit {
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
             TimeT overall = {};
-            for (int loop = 0; loop < num_loops; ++loop) {
-                overall += measure<TimeT, ClockT>::duration(std::forward<decltype(func)>(func),
-                                                            std::forward<Args>(args)...);
-            }
+            for (int loop = 0; loop < num_loops; ++loop)
+                overall += measure<TimeT, ClockT>::duration(std::forward<F>(func), std::forward<Args>(args)...);
             return overall / num_loops;
         }
 
@@ -87,8 +85,7 @@ namespace timeit {
             std::vector<TimeT> results;
             results.reserve(num_iterations);
             for (int iteration = 0; iteration < num_iterations; ++iteration) {
-                TimeT t = timeit<TimeT, ClockT>::operator()(std::forward<decltype(func)>(func),
-                                                            std::forward<Args>(args)...);
+                TimeT t = timeit<TimeT, ClockT>::operator()(std::forward<F>(func), std::forward<Args>(args)...);
                 results.emplace_back(t);
             }
             return results;
@@ -115,12 +112,10 @@ namespace timeit {
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
-            auto results = repeat<TimeT, ClockT>::operator()(std::forward<decltype(func)>(func),
-                                                             std::forward<Args>(args)...);
+            auto results = repeat<TimeT, ClockT>::operator()(std::forward<F>(func), std::forward<Args>(args)...);
             auto best = *std::min_element(results.begin(), results.end());
             std::cout << repeat<TimeT, ClockT>::num_loops << " loops, best of " << repeat<TimeT, ClockT>::num_iterations
-                      << ": "
-                      << std::chrono::duration<typename TimeT::rep, std::micro>{best}.count()
+                      << ": " << std::chrono::duration<typename TimeT::rep, std::micro>{best}.count()
                       << " usec per loop" << std::endl;
             return best;
         }
