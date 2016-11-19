@@ -10,6 +10,10 @@
 #include <algorithm>
 #include <iostream>
 
+/**
+ * Inspired by [timeit](https://docs.python.org/3.0/library/timeit.html) Python module,
+ * this class provides a simple way to time small bits of C/C++ code.
+ */
 namespace timeit {
 
     using default_duration = std::chrono::duration<double, std::micro>;
@@ -40,13 +44,11 @@ namespace timeit {
      *
      * @tparam TimeT    time interval type
      * @tparam ClockT   clock type
+     * @param number    number of times through the loop
      */
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class timeit {
     public:
-        /**
-         * @param number    number of times through the loop
-         */
         timeit(int number = 1000000) : num_loops{number} {}
 
         template<typename F, typename... Args>
@@ -70,14 +72,12 @@ namespace timeit {
 
      * @tparam TimeT    time interval type
      * @tparam ClockT   clock type
+     * @param execute   how many times to call timeit()
+     * @param number    number argument for timeit()
      */
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class repeat : protected timeit<TimeT, ClockT> {
     public:
-        /**
-         * @param execute   how many times to call timeit()
-         * @param number    number argument for timeit()
-         */
         repeat(int execute = 3, int number = 1000000) : timeit<TimeT, ClockT>{number}, num_iterations{execute} {}
 
         template<typename F, typename... Args>
@@ -100,14 +100,12 @@ namespace timeit {
      *
      * @tparam TimeT    time interval type
      * @tparam ClockT   clock type
+     * @param number    number argument for repeat()
+     * @param execute   execute argument for repeat()
      */
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class timeit_out : protected repeat<TimeT, ClockT> {
     public:
-        /**
-         * @param number    number argument for repeat()
-         * @param execute   execute argument for repeat()
-         */
         timeit_out(int number = 1000000, int execute = 3) : repeat<TimeT, ClockT>{execute, number} {}
 
         template<typename F, typename... Args>
