@@ -60,7 +60,7 @@ namespace timeit {
         }
 
     protected:
-        const int num_loops;
+        const int num_loops;    // number of times through the loop
     };
 
     /**
@@ -92,7 +92,7 @@ namespace timeit {
         }
 
     protected:
-        const int num_iterations;
+        const int num_iterations;   // how many times to call timeit()
     };
 
     /**
