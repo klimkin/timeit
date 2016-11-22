@@ -15,27 +15,8 @@
  * this class provides a simple way to time small bits of C/C++ code.
  */
 namespace timeit {
-
     using default_duration = std::chrono::duration<double, std::micro>;
     using default_clock = std::chrono::high_resolution_clock;
-
-    /**
-     * Measure execution time of a callable.
-     *
-     * For details see: http://stackoverflow.com/questions/2808398/easily-measure-elapsed-time
-     *
-     * @tparam TimeT    time interval type
-     * @tparam ClockT   clock type
-     */
-    template<typename TimeT = default_duration, class ClockT = default_clock>
-    struct measure {
-        template<typename F, typename... Args>
-        static TimeT duration(F &&func, Args &&... args) {
-            auto start = ClockT::now();
-            std::forward<F>(func)(std::forward<Args>(args)...);
-            return std::chrono::duration_cast<TimeT>(ClockT::now() - start);
-        }
-    };
 
     /**
      * Time number executions of the callable.
@@ -53,10 +34,10 @@ namespace timeit {
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
-            TimeT overall = {};
+            auto start = ClockT::now();
             for (int loop = 0; loop < num_loops; ++loop)
-                overall += measure<TimeT, ClockT>::duration(std::forward<F>(func), std::forward<Args>(args)...);
-            return overall / num_loops;
+                std::forward<F>(func)(std::forward<Args>(args)...);
+            return std::chrono::duration_cast<TimeT>(ClockT::now() - start) / num_loops;
         }
 
     protected:

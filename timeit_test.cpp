@@ -9,7 +9,7 @@
  * The clock returns monotonically increasing time measures: 1 2 3 etc
  */
 struct MockMonotonicClock {
-    using duration = std::chrono::seconds;
+    using duration = std::chrono::duration<double>;
     using time_point = std::chrono::time_point<MockMonotonicClock>;
 
     static time_point now() {
@@ -30,7 +30,7 @@ MockMonotonicClock::time_point MockMonotonicClock::tp = {};
  * The clock returns exponentially increasing time measures: 1 2 4 etc
  */
 struct MockExponentialClock {
-    using duration = std::chrono::seconds;
+    using duration = std::chrono::duration<double>;
     using time_point = std::chrono::time_point<MockMonotonicClock>;
 
     static time_point now() {
@@ -99,7 +99,7 @@ TEST_F(TimeitTest, TestMultipleLoops) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(10);
     auto t = timeit::timeit<MockMonotonicClock::duration, MockMonotonicClock>{10}(f).count();
-    EXPECT_EQ(t, 1);
+    EXPECT_EQ(t, 0.1);
 }
 
 TEST_F(TimeitTest, TestRepeat) {
@@ -123,8 +123,8 @@ TEST_F(TimeitTest, TestTimeBestTime) {
 
 TEST_F(TimeitTest, TestOutput) {
     testing::internal::CaptureStdout();
-    // the minimum will be on the first iteration: ((2-1)+(8-4))/2=2.5
+    // the minimum will be on the first iteration: (2-1)/2=0.5
     timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{2, 3}([]() {});
     auto output = testing::internal::GetCapturedStdout();
-    EXPECT_EQ(output, "2 loops, best of 3: 2000000 usec per loop\n");
+    EXPECT_EQ(output, "2 loops, best of 3: 500000 usec per loop\n");
 }
