@@ -35,9 +35,13 @@ namespace timeit {
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
             auto start = ClockT::now();
-            for (int loop = 0; loop < num_loops; ++loop)
+            for (volatile int loop = 0; loop < num_loops; ++loop)
+                ; // DO NOTHING
+            auto loop_overhead = ClockT::now() - start;
+            start = ClockT::now();
+            for (volatile int loop = 0; loop < num_loops; ++loop)
                 std::forward<F>(func)(std::forward<Args>(args)...);
-            return std::chrono::duration_cast<TimeT>(ClockT::now() - start) / num_loops;
+            return std::chrono::duration_cast<TimeT>(ClockT::now() - start - loop_overhead) / num_loops;
         }
 
     protected:
