@@ -5,14 +5,23 @@ this class provides a simple way to time small bits of C/C++ code.
  
 Example:
 
-    #include <cmath>
+    #include <map>
     #include "timeit.h"
     
+    std::map<int, int> std_map;
+    
+    void std_map_emplace() {
+        std_map.clear();
+        for (int i = 0; i < 50; ++i) {
+            std_map.emplace(i, i);
+        }
+    }
+    
     int main() {
-        timeit::timeit_out<>{}([]() { std::log(2); });
+        timeit::timeit_out<>{}(std_map_emplace);
         return 0;
     }
 
 Output:
 
-    1000000 loops, best of 3: 0.101597 usec per loop
+    1000000 loops, best of 3: 1.5497 usec per loop
