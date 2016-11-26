@@ -19,8 +19,10 @@ namespace timeit {
     using default_duration = std::chrono::duration<double, std::micro>;
     using default_clock = std::chrono::high_resolution_clock;
 
-    static const int default_number = 1000000;
-    static const int default_repeat = 3;
+    enum {
+        default_number = 1000000,
+        default_repeat = 3
+    };
 
     /**
          * Time number executions of the callable.
@@ -34,17 +36,17 @@ namespace timeit {
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class timeit {
     public:
-        explicit timeit(unsigned number = default_number) : num_loops{number} {}
+        explicit timeit(int number = default_number) : num_loops{number} {}
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
             auto start = ClockT::now();
-            for (volatile unsigned loop = 0; loop < num_loops; ++loop) {
+            for (volatile int loop = 0; loop < num_loops; ++loop) {
                 // DO NOTHING
             }
             auto loop_overhead = ClockT::now() - start;
             start = ClockT::now();
-            for (volatile unsigned loop = 0; loop < num_loops; ++loop) {
+            for (volatile int loop = 0; loop < num_loops; ++loop) {
                 std::forward<F>(func)(std::forward<Args>(args)...);
             }
             auto sum_time = ClockT::now() - start;
@@ -52,7 +54,7 @@ namespace timeit {
         }
 
     protected:
-        const unsigned num_loops;    // number of times through the loop
+        const int num_loops;    // number of times through the loop
     };
 
     /**
@@ -70,7 +72,7 @@ namespace timeit {
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class repeat {
     public:
-        explicit repeat(unsigned repeat = default_repeat, unsigned number = default_number)
+        explicit repeat(int repeat = default_repeat, int number = default_number)
                 : num_iterations{repeat}, num_loops{number} {}
 
         template<typename F, typename... Args>
@@ -85,12 +87,15 @@ namespace timeit {
         }
 
     protected:
-        const unsigned num_iterations;  // how many times to call timeit()
-        const unsigned num_loops;       // number of times through the loop
+        const int num_iterations;  // how many times to call timeit()
+        const int num_loops;       // number of times through the loop
     };
 
     /**
      * Call timeit() a few times and return the best result.
+     *
+     * If number is zero, a suitable number of loops is calculated by trying
+     * successive powers of 10 until the total time is at least 0.2 seconds.
      *
      * @tparam TimeT    time interval type
      * @tparam ClockT   clock type
@@ -100,12 +105,12 @@ namespace timeit {
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class timeit_out {
     public:
-        explicit timeit_out(unsigned int repeat = default_repeat, unsigned int number = 0, bool verbose = false)
+        explicit timeit_out(int repeat = default_repeat, int number = 0, bool verbose = false)
                 : num_iterations{repeat}, num_loops{number}, verbose{verbose} {}
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
-            unsigned int number = num_loops;
+            int number = num_loops;
             if (number == 0) {
                 number = 10;
                 for (int i = 0; i < 10; ++i, number *= 10) {
@@ -133,8 +138,8 @@ namespace timeit {
         }
 
     protected:
-        const unsigned num_iterations;   // how many times to call timeit()
-        const unsigned num_loops;    // number of times through the loop
+        const int num_iterations;   // how many times to call timeit()
+        const int num_loops;    // number of times through the loop
         bool verbose;
     };
 }  // namespace timeit
