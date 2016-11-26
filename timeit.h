@@ -5,11 +5,10 @@
 #ifndef _TIMEIT_TIMEIT_H
 #define _TIMEIT_TIMEIT_H
 
-#include <chrono>
 #include <algorithm>
+#include <chrono>
 #include <iostream>
-#include <utility>
-#include <unistd.h>
+#include <vector>
 
 /**
  * Inspired by [timeit](https://docs.python.org/3.0/library/timeit.html) Python module,
