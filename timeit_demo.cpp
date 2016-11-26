@@ -23,8 +23,8 @@ void std_map_array_subscript_operator() {
 
 int main() {
     std::cout << "std::map emplace:" << std::endl;
-    timeit::timeit_out<>{}(std_map_emplace);
+    timeit::timeit_out<>{3, 1000000}(std_map_emplace);
     std::cout << "std::map operator[]:" << std::endl;
-    timeit::timeit_out<>{}(std_map_array_subscript_operator);
+    timeit::timeit_out<>{3, 1000000}(std_map_array_subscript_operator);
     return 0;
 }

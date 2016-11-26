@@ -19,19 +19,22 @@ namespace timeit {
     using default_duration = std::chrono::duration<double, std::micro>;
     using default_clock = std::chrono::high_resolution_clock;
 
+    static const int default_number = 1000000;
+    static const int default_repeat = 3;
+
     /**
-     * Time number executions of the callable.
-     *
-     * The argument is the number of times through the loop, defaulting to one million.
-     *
-     * @tparam TimeT    time interval type
-     * @tparam ClockT   clock type
-     * @param number    number of times through the loop
-     */
+         * Time number executions of the callable.
+         *
+         * The argument is the number of times through the loop, defaulting to one million.
+         *
+         * @tparam TimeT    time interval type
+         * @tparam ClockT   clock type
+         * @param number    number of times through the loop
+         */
     template<typename TimeT = default_duration, class ClockT = default_clock>
     class timeit {
     public:
-        explicit timeit(unsigned number = 1000000) : num_loops{number} {}
+        explicit timeit(unsigned number = default_number) : num_loops{number} {}
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
@@ -45,7 +48,7 @@ namespace timeit {
                 std::forward<F>(func)(std::forward<Args>(args)...);
             }
             auto sum_time = ClockT::now() - start;
-            return std::chrono::duration_cast<TimeT>(sum_time - loop_overhead) / num_loops;
+            return std::chrono::duration_cast<TimeT>(sum_time - loop_overhead);
         }
 
     protected:
@@ -53,61 +56,86 @@ namespace timeit {
     };
 
     /**
-     * Call timeit() a few times.
-     *
-     * This is a convenience function that calls the timeit() repeatedly, returning a list of results.
-     * The first argument specifies how many times to call timeit(), defaulting to 3.
-     * The second argument specifies the number argument for timeit().
+         * Call timeit() a few times.
+         *
+         * This is a convenience function that calls the timeit() repeatedly, returning a list of results.
+         * The first argument specifies how many times to call timeit(), defaulting to 3.
+         * The second argument specifies the number argument for timeit().
 
-     * @tparam TimeT    time interval type
-     * @tparam ClockT   clock type
-     * @param execute   how many times to call timeit()
-     * @param number    number argument for timeit()
-     */
+         * @tparam TimeT    time interval type
+         * @tparam ClockT   clock type
+         * @param repeat    how many times to call timeit()
+         * @param number    number argument for timeit()
+         */
     template<typename TimeT = default_duration, class ClockT = default_clock>
-    class repeat : protected timeit<TimeT, ClockT> {
+    class repeat {
     public:
-        explicit repeat(unsigned execute = 3, unsigned number = 1000000)
-                : timeit<TimeT, ClockT>{number}, num_iterations{execute} {}
+        explicit repeat(unsigned repeat = default_repeat, unsigned number = default_number)
+                : num_iterations{repeat}, num_loops{number} {}
 
         template<typename F, typename... Args>
         auto operator()(F &&func, Args &&... args) const {
             std::vector<TimeT> results;
             results.reserve(num_iterations);
             for (int iteration = 0; iteration < num_iterations; ++iteration) {
-                TimeT t = timeit<TimeT, ClockT>::operator()(std::forward<F>(func), std::forward<Args>(args)...);
-                results.emplace_back(t);
+                results.emplace_back(
+                        timeit<TimeT, ClockT>{num_loops}(std::forward<F>(func), std::forward<Args>(args)...));
             }
             return results;
         }
 
     protected:
-        const unsigned num_iterations;   // how many times to call timeit()
+        const unsigned num_iterations;  // how many times to call timeit()
+        const unsigned num_loops;       // number of times through the loop
     };
 
     /**
-     * Call timeit() a few times, print, and return the best result.
+     * Call timeit() a few times and return the best result.
      *
      * @tparam TimeT    time interval type
      * @tparam ClockT   clock type
+     * @param repeat    repeat argument for repeat()
      * @param number    number argument for repeat()
-     * @param execute   execute argument for repeat()
      */
     template<typename TimeT = default_duration, class ClockT = default_clock>
-    class timeit_out : protected repeat<TimeT, ClockT> {
+    class timeit_out {
     public:
-        explicit timeit_out(unsigned number = 1000000, unsigned execute = 3)
-                : repeat<TimeT, ClockT>{execute, number} {}
+        explicit timeit_out(unsigned int repeat = default_repeat, unsigned int number = 0, bool verbose = false)
+                : num_iterations{repeat}, num_loops{number}, verbose{verbose} {}
 
         template<typename F, typename... Args>
         TimeT operator()(F &&func, Args &&... args) const {
-            auto results = repeat<TimeT, ClockT>::operator()(std::forward<F>(func), std::forward<Args>(args)...);
-            auto best = *std::min_element(results.begin(), results.end());
-            std::cout << repeat<TimeT, ClockT>::num_loops << " loops, best of " << repeat<TimeT, ClockT>::num_iterations
+            unsigned int number = num_loops;
+            if (number == 0) {
+                number = 10;
+                for (int i = 0; i < 10; ++i, number *= 10) {
+                    auto x = timeit<TimeT, ClockT>{number}(std::forward<F>(func), std::forward<Args>(args)...);
+                    double x_seconds = std::chrono::duration<typename TimeT::rep>{x}.count();
+                    if (verbose)
+                        std::cout << number << " loops -> " << x_seconds << " secs" << std::endl;
+                    if (x_seconds >= 0.2)
+                        break;
+                }
+            }
+            auto results{repeat<TimeT, ClockT>{num_iterations, number}(
+                    std::forward<F>(func), std::forward<Args>(args)...)};
+            if (verbose) {
+                std::cout << "raw times:";
+                for (auto &r : results)
+                    std::cout << " " << std::chrono::duration<typename TimeT::rep, std::micro>{r}.count();
+                std::cout << std::endl;
+            }
+            auto best = *std::min_element(results.begin(), results.end()) / number;
+            std::cout << number << " loops, best of " << num_iterations
                       << ": " << std::chrono::duration<typename TimeT::rep, std::micro>{best}.count()
                       << " usec per loop" << std::endl;
             return best;
         }
+
+    protected:
+        const unsigned num_iterations;   // how many times to call timeit()
+        const unsigned num_loops;    // number of times through the loop
+        bool verbose;
     };
 }  // namespace timeit
 

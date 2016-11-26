@@ -59,7 +59,7 @@ public:
     void operator()(int arg) override { Call1(arg); }
 };
 
-TEST_F(TimeitTest, TestCallableWithoutArguments) {
+TEST_F(TimeitTest, CallableWithoutArguments) {
     MockCallable f;
     EXPECT_CALL(f, Call0());
     auto t = timeit::timeit<MockExponentialClock::duration, MockExponentialClock>{1}(f).count();
@@ -67,7 +67,7 @@ TEST_F(TimeitTest, TestCallableWithoutArguments) {
     EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, TestCallableWithArgument) {
+TEST_F(TimeitTest, CallableWithArgument) {
     MockCallable f;
     EXPECT_CALL(f, Call1(2));
     auto t = timeit::timeit<MockExponentialClock::duration, MockExponentialClock>{1}(f, 2).count();
@@ -75,14 +75,14 @@ TEST_F(TimeitTest, TestCallableWithArgument) {
     EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, TestMultipleLoops) {
+TEST_F(TimeitTest, MultipleLoops) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(10);
     auto t = timeit::timeit<MockExponentialClock::duration, MockExponentialClock>{10}(f).count();
-    EXPECT_EQ(t, 0.3);
+    EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, TestRepeat) {
+TEST_F(TimeitTest, MultipleIterations) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(2);
     auto t = timeit::repeat<MockExponentialClock::duration, MockExponentialClock>{2, 1}(f);
@@ -93,19 +93,35 @@ TEST_F(TimeitTest, TestRepeat) {
     EXPECT_EQ(t, expected);
 }
 
-TEST_F(TimeitTest, TestTimeBestTime) {
+TEST_F(TimeitTest, BestTime) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(2);
     testing::internal::CaptureStdout();
-    auto t = timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{1, 2}(f).count();
+    auto t = timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{2, 1}(f).count();
     testing::internal::GetCapturedStdout();
     EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, TestOutput) {
+TEST_F(TimeitTest, Output) {
     testing::internal::CaptureStdout();
     // the minimum will be on the first iteration: ((8-4)-(2-1))/2=1.5
-    timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{2, 3}([]() {});
+    timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{3, 2}([]() {});
     auto output = testing::internal::GetCapturedStdout();
     EXPECT_EQ(output, "2 loops, best of 3: 1.5e+06 usec per loop\n");
+}
+
+TEST_F(TimeitTest, CalibrateNumberOfLoops) {
+    // Calls to timer return 1 2 4 8 ...
+    // Loop calibration:
+    //   empty loop: 2-1=1
+    //   10 loops:   (8-4-1)/10 = 0.3
+    // Result:
+    //   empty loop: 32-16=16
+    //   10 loops:   (128-64-16)/10=4.8
+    MockCallable f;
+    EXPECT_CALL(f, Call0()).Times(20);
+    testing::internal::CaptureStdout();
+    auto t = timeit::timeit_out<MockExponentialClock::duration, MockExponentialClock>{1}(f).count();
+    testing::internal::GetCapturedStdout();
+    EXPECT_EQ(t, 4.8);
 }
