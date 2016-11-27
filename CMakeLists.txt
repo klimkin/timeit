@@ -11,6 +11,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif ()
 
 add_subdirectory(external/googletest)
+add_subdirectory(examples)
 
 add_executable(timeit_demo timeit_demo.cpp timeit.h)
 
