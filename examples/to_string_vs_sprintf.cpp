@@ -21,9 +21,14 @@ void std_sprintf() {
 }
 
 int main() {
-    std::cout << "std::to_string:" << std::endl;
+    std::cout << "std::to_string" << std::endl;
     timeit::timeit_out<>{}(std_to_string);
-    std::cout << "std::sprintf:" << std::endl;
+    std::cout << "std::sprintf" << std::endl;
     timeit::timeit_out<>{}(std_sprintf);
+
+    std::cout << "std::to_string / std::sprintf" << std::endl;
+    timeit::compare<>{}(std_to_string, std_sprintf);
+    std::cout << "std::sprintf / std::to_string" << std::endl;
+    timeit::compare<>{}(std_sprintf, std_to_string);
     return 0;
 }

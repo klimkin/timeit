@@ -2,8 +2,8 @@
 // Created by Alexey Klimkin on 11/17/16.
 //
 
-#include <gmock/gmock.h>
 #include "timeit.h"
+#include <gmock/gmock.h>
 
 /**
  * The clock returns exponentially increasing time measures: 1 2 4 etc
@@ -75,14 +75,14 @@ TEST_F(TimeitTest, CallableWithArgument) {
     EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, MultipleLoops) {
+TEST_F(TimeitTest, Timeit) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(10);
     auto t = timeit::timeit<MockExponentialClock::duration, MockExponentialClock>{10}(f).count();
     EXPECT_EQ(t, 3);
 }
 
-TEST_F(TimeitTest, MultipleIterations) {
+TEST_F(TimeitTest, Repeat) {
     MockCallable f;
     EXPECT_CALL(f, Call0()).Times(2);
     auto t = timeit::repeat<MockExponentialClock::duration, MockExponentialClock>{2, 1}(f);
@@ -91,6 +91,13 @@ TEST_F(TimeitTest, MultipleIterations) {
     std::vector<MockExponentialClock::duration> expected{MockExponentialClock::duration{3},
                                                          MockExponentialClock::duration{48}};
     EXPECT_EQ(t, expected);
+}
+
+TEST_F(TimeitTest, CalibrateNumberOfLoops) {
+    MockCallable f1;
+    EXPECT_CALL(f1, Call0()).Times(10);
+    auto n = timeit::calibrate_number_of_loops<MockExponentialClock::duration, MockExponentialClock>{}(f1);
+    EXPECT_EQ(n, 10);
 }
 
 TEST_F(TimeitTest, BestTime) {
@@ -110,7 +117,7 @@ TEST_F(TimeitTest, Output) {
     EXPECT_EQ(output, "2 loops, best of 3: 1.5e+06 usec per loop\n");
 }
 
-TEST_F(TimeitTest, CalibrateNumberOfLoops) {
+TEST_F(TimeitTest, AutoCalibrateNumberOfLoops) {
     // Calls to timer return 1 2 4 8 ...
     // Loop calibration:
     //   empty loop: 2-1=1
